@@ -1,7 +1,12 @@
 import telebot
 from currency_module import get_currency
 
-bot = telebot.TeleBot("#BOT TOKEN", parse_mode=None)
+file = open("bot-token.txt")
+api_key = file.read()
+file.close()
+
+
+bot = telebot.TeleBot(api_key, parse_mode=None)
 
 bot.set_my_commands([
     telebot.types.BotCommand("/start", "main menu"),
