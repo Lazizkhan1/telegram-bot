@@ -1,7 +1,7 @@
 import telebot
 from currency_module import get_currency
 
-bot = telebot.TeleBot("5522963354:AAG3jgBDTU4hQeq8BJP8BGgtt8rhs8s765A", parse_mode=None)
+bot = telebot.TeleBot("#BOT TOKEN", parse_mode=None)
 
 bot.set_my_commands([
     telebot.types.BotCommand("/start", "main menu"),
