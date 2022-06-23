@@ -1,5 +1,6 @@
 import telebot
 from currency_module import get_currency
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 file = open("bot-token.txt")
 api_key = file.read()
@@ -17,7 +18,6 @@ bot.set_my_commands([
 
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
-
     bot.reply_to(message, "Qelsz endi ")
 
 
@@ -28,10 +28,17 @@ def send_creator_id(message):
 
 @bot.message_handler(commands=['valyuta'])
 def send_currency(message):
-    currency_us = get_currency('USD')
-    currency_rub = get_currency('RUB')
-    bot.reply_to(message, f"Bugungi sana: {currency_us['date']} \n\n{currency_us['title']}: {currency_us['cb_price']} so'm\n"
-                          f"{currency_rub['title']}: {currency_rub['cb_price']} so'm")
+    markup_inline = InlineKeyboardMarkup(row_width=1)
+    item_us = InlineKeyboardButton(text="Aqsh Dollar", callback_data='USD')
+    item_ru = InlineKeyboardButton(text="Rossiya Rubl", callback_data='RUB')
+    markup_inline.add(item_us, item_ru)
+    bot.send_message(message.chat.id, "Valyutani tanlang", reply_markup= markup_inline)
+
+
+@bot.callback_query_handler(func=lambda call: True)
+def send_currency(call):
+    currency = get_currency(call.data)
+    bot.send_message(call.message.chat.id, f"Bugungi sana: {currency['date']} \n\n{currency['title']}: {currency['cb_price']} so'm\n")
 
 
 @bot.message_handler(func=lambda message: True)
