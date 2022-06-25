@@ -45,7 +45,7 @@ def send_info(message):
                                       "Creator: @lazizkhan1\n"
                                       "Tester: @ellifess\n"
                                       "Github Link: https://github.com/Lazizkhan1/telegram-bot",
-                     disable_web_page_preview=True)
+                                      disable_web_page_preview=True)
 
 
 @bot.message_handler(commands=['help'])
@@ -71,8 +71,12 @@ def echo_all(message):
         bot.reply_to(message, "Raxmatdan 5 min baqvat 😉")
     elif all(message.text) and message.text[0] == "😂":
         bot.reply_to(message, "🤪")
+    elif message.text == "send_photo":
+        file = open("test.jpg", "rb")
+        bot.send_photo(message.chat.id, file, "This isn't photo")
     else:
         bot.reply_to(message, message.text)
 
 
-bot.infinity_polling()
+if __name__ == "__main__":
+    bot.infinity_polling()
