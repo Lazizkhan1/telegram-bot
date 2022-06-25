@@ -8,6 +8,7 @@ bot = telebot.TeleBot(api_key, parse_mode=None)
 bot.set_my_commands([
     telebot.types.BotCommand("/start", "Botni ishga tushurish"),
     telebot.types.BotCommand("/valyuta", "Valyuta kurslari"),
+    telebot.types.BotCommand("/game", "Zerkkanla uchun"),
     telebot.types.BotCommand("/info", "Bot haqida"),
     telebot.types.BotCommand("/help", "Yordam")
 ])
@@ -38,14 +39,19 @@ def callback_currency(call):
                          f"\n{currency['title']}: {currency['cb_price']} so'm\n")
 
 
+@bot.message_handler(commands=['game'])
+def send_game(message):
+    bot.send_dice(message.chat.id, "🎯")
+
+
 @bot.message_handler(commands=['info'])
 def send_info(message):
-    bot.send_message(message.chat.id, "This bot created in 23.06.2022\n"
-                                      "Bu bot shunchaki tajriba oshirish uchun tuzuldi."
-                                      "Creator: @lazizkhan1\n"
-                                      "Tester: @ellifess\n"
-                                      "Github Link: https://github.com/Lazizkhan1/telegram-bot",
-                                      disable_web_page_preview=True)
+    bot.send_message(message.chat.id, "*This bot created in 23.06.2022*\n"
+                                      "_Bu bot shunchaki tajriba oshirish uchun tuzuldi_.\n"
+                                      "*Creator:* @lazizkhan1\n"
+                                      "*Tester:* @ellifess\n"
+                                      "*Github Link:* https://github.com/Lazizkhan1/telegram-bot",
+                                      disable_web_page_preview=True, parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['help'])
@@ -67,6 +73,8 @@ def echo_all(message):
         bot.reply_to(message, message.text)
     if "yaxshi" in message.text or "yaxwi" in message.text or "yaxw" in message.text:
         bot.reply_to(message, f"Hardoim yaxshi bo'lin 😊")
+    elif "yaxshimas" in message.text or "yaxwimas" in message.text or "yaxwmas" in message.text:
+        bot.reply_to(message, f"Bekorlani beshtasini etibsiz 🤪")
     elif "raxmat" in message.text:
         bot.reply_to(message, "Raxmatdan 5 min baqvat 😉")
     elif all(message.text) and message.text[0] == "😂":
