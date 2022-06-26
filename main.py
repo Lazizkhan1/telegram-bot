@@ -1,22 +1,24 @@
-import telebot
-from private_variables import api_key
+from  telebot import TeleBot, types
+from private_variables import api_key, video_link
 from currency_module import get_currency
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-bot = telebot.TeleBot(api_key, parse_mode=None)
-
+bot = TeleBot(api_key, parse_mode=None)
+temp = None
+last_message = None
 bot.set_my_commands([
-    telebot.types.BotCommand("/start", "Botni ishga tushurish"),
-    telebot.types.BotCommand("/valyuta", "Valyuta kurslari"),
-    telebot.types.BotCommand("/game", "Zerkkanla uchun"),
-    telebot.types.BotCommand("/info", "Bot haqida"),
-    telebot.types.BotCommand("/help", "Yordam")
+    types.BotCommand("/start", "Botni ishga tushurish"),
+    types.BotCommand("/valyuta", "Valyuta kurslari"),
+    types.BotCommand("/game", "Zerkkanla uchun"),
+    types.BotCommand("/info", "Bot haqida"),
+    types.BotCommand("/help", "Yordam")
 ])
 
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Qelesiz endi ")
+    bot.reply_to(message, "Qalesiz endi ")\
+
 
 
 @bot.message_handler(commands=['valyuta'])
@@ -28,20 +30,42 @@ def send_currency(message):
     bot.send_message(message.chat.id, "Valyutani tanlang", reply_markup=markup_inline)
 
 
-@bot.callback_query_handler(func=lambda call: True)
-def callback_currency(call):
-    currency_list = ['USD', 'RUB']
-    if call.data in currency_list:
-        bot.delete_message(call.message.chat.id, call.message.id)
-        currency = get_currency(call.data)
-        bot.send_message(call.message.chat.id,
-                         f"Bugungi sana: {currency['date']} \n"
-                         f"\n{currency['title']}: {currency['cb_price']} so'm\n")
+@bot.callback_query_handler(func=lambda call: call.data in ['USD', 'RUB'])
+def currency_callback(call):
+    bot.delete_message(call.message.chat.id, call.message.id)
+    currency = get_currency(call.data)
+    bot.send_message(call.message.chat.id,
+                     f"Bugungi sana: {currency['date']} \n"
+                     f"\n{currency['title']}: {currency['cb_price']} so'm\n")
+
+
+@bot.callback_query_handler(func=lambda call: call.data in ['🎯', '🎲', '🎳', '🏀', '⚽', '🎰'])
+def dice_callback(call):
+    bot.delete_message(call.message.chat.id, call.message.id)
+    bot.delete_message(call.message.chat.id, temp.id)
+    bot.send_dice(call.message.chat.id, call.data)
 
 
 @bot.message_handler(commands=['game'])
 def send_game(message):
-    bot.send_dice(message.chat.id, "🎯")
+    global temp
+    # there sending tutorial video using file_id
+    temp = bot.send_video(chat_id=message.chat.id, video=video_link,
+                          caption="Qanday o'ynash", supports_streaming=True)
+    markup_inline = InlineKeyboardMarkup(row_width=3)
+    item_direct_hit = InlineKeyboardButton(text="🎯", callback_data='🎯')
+    item_game_die = InlineKeyboardButton(text="🎲", callback_data='🎲')
+    item_bowling = InlineKeyboardButton(text="🎳", callback_data='🎳')
+    item_basketball = InlineKeyboardButton(text="🏀", callback_data='🏀')
+    item_football = InlineKeyboardButton(text="⚽", callback_data='⚽')
+    item_slot_machine = InlineKeyboardButton(text="🎰", callback_data='🎰')
+    markup_inline.add(item_direct_hit,
+                      item_game_die,
+                      item_bowling,
+                      item_basketball,
+                      item_football,
+                      item_slot_machine)
+    bot.send_message(message.chat.id, "O'yinni tanlang tanlang", reply_markup=markup_inline)
 
 
 @bot.message_handler(commands=['info'])
@@ -51,7 +75,7 @@ def send_info(message):
                                       "*Creator:* @lazizkhan1\n"
                                       "*Tester:* @ellifess\n"
                                       "*Github Link:* https://github.com/Lazizkhan1/telegram-bot",
-                                      disable_web_page_preview=True, parse_mode="Markdown")
+                     disable_web_page_preview=True, parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['help'])
@@ -67,14 +91,10 @@ def forward_help(message):
 
 @bot.message_handler(func=lambda message: True)
 def echo_all(message):
-    if message.from_user.id != 968242298:
-        bot.forward_message(968242298, message.from_user.id, message.id)
-        # you can forward users message to another chat or user
-        bot.reply_to(message, message.text)
-    if "yaxshi" in message.text or "yaxwi" in message.text or "yaxw" in message.text:
+    if "yaxshi " in message.text or "yaxwi " in message.text or "yaxw " in message.text:
         bot.reply_to(message, f"Hardoim yaxshi bo'lin 😊")
     elif "yaxshimas" in message.text or "yaxwimas" in message.text or "yaxwmas" in message.text:
-        bot.reply_to(message, f"Bekorlani beshtasini etibsiz 🤪")
+        bot.reply_to(message, f"Bekorlani beshtasini etibsiz, yaxshiku🤪")
     elif "raxmat" in message.text:
         bot.reply_to(message, "Raxmatdan 5 min baqvat 😉")
     elif all(message.text) and message.text[0] == "😂":
