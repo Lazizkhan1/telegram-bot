@@ -9,7 +9,7 @@ import random
 
 bot = TeleBot(api_key, parse_mode=None)
 temp_message = None
-random_num = None
+random_num = [None, None]
 count = 0
 bot_dice_value = 0
 bot.set_my_commands([
@@ -23,7 +23,7 @@ bot.set_my_commands([
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
-    bot.reply_to(message, "Qalesiz endi ")
+    bot.send_message(message.chat.id, "Qalesiz endi ")
 
 
 @bot.message_handler(commands=['valyuta'])
@@ -48,6 +48,7 @@ def currency_callback(call):
 
 @bot.callback_query_handler(func=lambda call: call.data == 'delete-message')
 def delete_message(call):
+    send_welcome(call.message)
     bot.delete_message(call.message.chat.id, call.message.id)
 
 
@@ -112,45 +113,65 @@ def send_game(message):
 
 @bot.callback_query_handler(func=lambda call: call.data == 'gn')
 def guess_number(call):
-    global random_num
-    random_num = random.randint(1, 50)
-    if call.from_user.id == creator_id or call.from_user.id == tester_id:
-        print(random_num)
     global temp_message
     temp_message = call.data
     bot.delete_message(call.message.chat.id, call.message.id)
-    bot.send_message(call.message.chat.id,
-                     "Siz \"*Yashirin Son*\" O'yinidasiz!\n"
-                     "Men 1 dan 50 gacha bolgan sonlardan birini o'yladim.\n"
-                     "Sizning vaizfangiz men o'ylagan sonni topish.\n", parse_mode='Markdown')
+    markup_inline = InlineKeyboardMarkup(row_width=1)
+    item_hard = InlineKeyboardButton(text="Qiyin", callback_data='gn_hard')
+    item_medium = InlineKeyboardButton(text="O'rtacha", callback_data='gn_medium')
+    item_easy = InlineKeyboardButton(text="Oson", callback_data='gn_easy')
+    markup_inline.add(item_hard, item_medium, item_easy)
+    bot.send_message(call.message.chat.id, "O'yinni qiyinligini tanlang", reply_markup=markup_inline)
 
 
-@bot.message_handler(func=lambda message: temp_message == 'gn')
+@bot.callback_query_handler(func=lambda call: call.data in ['gn_hard', 'gn_medium', 'gn_easy'])
+def gn_set_difficulty(call):
+    global random_num
+    to = 0
+    if call.data == 'gn_hard':
+        to = 100
+    elif call.data == 'gn_medium':
+        to = 50
+    else:
+        to = 20
+    random_num[1] = to
+    random_num[0] = random.randint(1, to)
+    print(random_num[0])
+    bot.send_message(call.message.chat.id, f"*1* dan *{to}* gacha bolgan sonlar ichidan yashirin sonni toping.\n"
+                                           f"_Iltimos biror son kiriting_.\n", parse_mode='Markdown')
+    bot.register_next_step_handler(call.message, guess_number_game)
+    bot.delete_message(call.message.chat.id, call.message.id)
+
+
+@bot.message_handler(func=lambda message: temp_message == "gn")
 def guess_number_game(message):
-    global random_num, count
+    global random_num, count, temp_message
     if message.text.isnumeric():
         user_guess = int(message.text)
-        if user_guess in range(1, 51):
-            if user_guess > random_num:
+        if user_guess in range(1, random_num[1] + 1):
+            if user_guess > random_num[0]:
                 count += 1
                 bot.send_message(message.chat.id, "Kichikroq son kiriting")
-            elif user_guess < random_num:
+            elif user_guess < random_num[0]:
                 count += 1
                 bot.send_message(message.chat.id, "Kattaroq son kiriting")
             else:
-                bot.send_message(message.chat.id, f"*Topdingiz* 🥳😎 \n*Yashirin son*: {random_num} \n"
-                                                  f"*Urunishlar soni*: {count + 1} ta ", parse_mode="Markdown")
+                bot.send_message(message.chat.id, f"*Topdingiz* 🥳😎 \n"
+                                                  f"*Yashirin son*: {random_num[0]} \n"
+                                                  f"*Urunishlar soni*: {count + 1} ta \n",
+                                                  parse_mode="Markdown")
+                temp_message = None
                 count = 0
                 retry_game(message)
         else:
-            bot.send_message(message.chat.id, "1 va 50 orasidagi sonlarni kiriting!")
+            bot.send_message(message.chat.id, f"1 va {random_num[1]} orasidagi sonlarni kiriting!")
     else:
-        bot.send_message(message.chat.id, "Iltimos faqat raqam kiriting!")
+        bot.send_message(message.chat.id, "Iltimos faqat son kiriting!")
 
 
 def retry_game(message):
     markup_inline = InlineKeyboardMarkup(row_width=2)
-    item_yes = InlineKeyboardButton(text="Ha", callback_data=temp_message)
+    item_yes = InlineKeyboardButton(text="Ha", callback_data='gn')
     item_no = InlineKeyboardButton(text="Yo'q", callback_data='delete-message')
     markup_inline.add(item_yes, item_no)
     bot.send_message(message.chat.id, "Yana o'ynaysizmi?", reply_markup=markup_inline)
@@ -163,7 +184,7 @@ def send_info(message):
                                       "*Creator:* @lazizkhan1\n"
                                       "*Assistant:* @ellifess\n"
                                       "*Github Link:* https://github.com/Lazizkhan1/telegram-bot",
-                     disable_web_page_preview=True, parse_mode="Markdown")
+                                      disable_web_page_preview=True, parse_mode="Markdown")
 
 
 @bot.message_handler(commands=['help'])
