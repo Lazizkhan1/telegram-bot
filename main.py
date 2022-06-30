@@ -1,4 +1,5 @@
 import random
+import time
 from telebot import TeleBot, types
 from copy import copy
 from private_variables import api_key, video_link, creator_id, tester_id
@@ -52,14 +53,36 @@ def delete_message(call):
 
 @bot.callback_query_handler(func=lambda call: call.data in ['🎯', '🎲', '🎳', '🏀', '⚽', '🎰'])
 def dice_callback(call):
+    global bot_dice_value
     bot.delete_message(call.message.chat.id, call.message.id)
-    dice = bot.send_dice(call.message.chat.id, call.data)
-    bot.reply_to(dice, f"Mening ball'im: *{dice.dice.value}*\nEndi sizni galingiz", parse_mode="Markdown")
+    bot_dice = bot.send_dice(call.message.chat.id, call.data)
+    bot_dice_value = bot_dice.dice.value
+    bot.reply_to(bot_dice, f"Mani ball'im: *{bot_dice.dice.value}*\nEndi sizni galingiz", parse_mode="Markdown")
 
 
 @bot.message_handler(content_types=['dice'])
 def user_dice_info(message):
-    bot.send_message(message.chat.id, f"Sizning ball'ingiz *{message.dice.value}*", parse_mode="Markdown")
+    global bot_dice_value
+    bot.reply_to(message, f"Sizning ball'ingiz *{message.dice.value}*", parse_mode="Markdown")
+
+    if bot_dice_value == 0:
+        dice = bot.send_dice(message.chat.id, message.dice.emoji)
+        bot_dice_value = dice.dice.value
+        bot.reply_to(dice, f"Mani ball'im: *{dice.dice.value}*", parse_mode="Markdown")
+        check_dice(message)
+    else:
+        check_dice(message)
+
+
+def check_dice(message):
+    global bot_dice_value
+    if bot_dice_value > message.dice.value:
+        bot.send_message(message.chat.id, "Man yutdim🥳😎")
+    elif bot_dice_value < message.dice.value:
+        bot.send_message(message.chat.id, "Siz yutdiz🥳😎")
+    else:
+        bot.send_message(message.chat.id, "Durrang🤝💪")
+    bot_dice_value = 0
 
 
 @bot.message_handler(commands=['game'])
@@ -97,15 +120,14 @@ def guess_number(call):
     temp_message = call.data
     bot.delete_message(call.message.chat.id, call.message.id)
     bot.send_message(call.message.chat.id,
-                     "_Siz \"Yashirin Son\" O'yinidasiz!\n"
+                     "Siz \"*Yashirin Son*\" O'yinidasiz!\n"
                      "Men 1 dan 50 gacha bolgan sonlardan birini o'yladim.\n"
-                     "Sizning vaizfangiz men o'ylagan sonni topish._\n", parse_mode='Markdown')
+                     "Sizning vaizfangiz men o'ylagan sonni topish.\n", parse_mode='Markdown')
 
 
 @bot.message_handler(func=lambda message: temp_message == 'gn')
 def guess_number_game(message):
     global random_num, count
-
     if message.text.isnumeric():
         user_guess = int(message.text)
         if user_guess in range(1, 51):
@@ -116,8 +138,8 @@ def guess_number_game(message):
                 count += 1
                 bot.send_message(message.chat.id, "Kattaroq son kiriting")
             else:
-                bot.send_message(message.chat.id, f"*Topdingiz* 🥳. Yashirin son {random_num} \n"
-                                                  f"Urunishlar soni {count + 1} ta ", parse_mode="Markdown")
+                bot.send_message(message.chat.id, f"*Topdingiz* 🥳😎 \n*Yashirin son*: {random_num} \n"
+                                                  f"*Urunishlar soni*: {count + 1} ta ", parse_mode="Markdown")
                 count = 0
                 retry_game(message)
         else:
