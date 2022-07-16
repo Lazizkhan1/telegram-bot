@@ -110,18 +110,6 @@ def minimax(board, isMaximizing):
         return bestScore
 
 
-@bot.message_handler(commands=['start'])
-def start(message):
-    global game_running
-    game_running = True
-    clear_board()
-    choose = InlineKeyboardMarkup(row_width=1)
-    _X = InlineKeyboardButton(text='❌', callback_data='❌')
-    _0 = InlineKeyboardButton(text='⭕️', callback_data='⭕️')
-    choose.add(_X, _0)
-    bot.send_message(message.chat.id, "Choose your letter", reply_markup=choose)
-
-
 def markup():
     global board
     markup_board = InlineKeyboardMarkup(row_width=3)
@@ -143,6 +131,31 @@ def markup():
 
 def edit_message(message):
     bot.edit_message_reply_markup(message.chat.id, message.id, reply_markup=markup())
+
+
+@bot.message_handler(commands=['start'])
+def start(message):
+    global game_running
+    game_running = True
+    clear_board()
+    menu = InlineKeyboardMarkup(row_width=2)
+    pvp = InlineKeyboardButton(text="Play with Friend 👤", callback_data='pvp')
+    pvb = InlineKeyboardButton(text="Play with Bot 🤖", callback_data='pvb')
+    menu.add(pvp, pvb)
+    bot.send_message(message.chat.id, "Choose one", reply_markup=menu)
+
+
+@bot.callback_query_handler(func=lambda call: call.data in ['pvp', 'pvb'])
+def callback_menu(call):
+    bot.delete_message(call.message.chat.id, call.message.id)
+    if call.data == 'pvb':
+        choose = InlineKeyboardMarkup(row_width=2)
+        _X = InlineKeyboardButton(text='❌', callback_data='❌')
+        _0 = InlineKeyboardButton(text='⭕️', callback_data='⭕️')
+        choose.add(_X, _0)
+        bot.send_message(call.message.chat.id, "Choose your letter", reply_markup=choose)
+    else:
+        bot.send_message(call.message.chat.id, "Comming soon 😉")
 
 
 @bot.callback_query_handler(func=lambda call: call.data in ['❌', '⭕️'])
